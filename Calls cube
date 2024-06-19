@@ -1,0 +1,317 @@
+Calls cube:
+
+The Calls cube allows in-depth analysis of contract interactions such as caller, callee, and deployer of a contract, as well as details of transaction costs, fee burns, and calls by specific methods.
+
+Filtering Calls cube: 
+
+
+In the following example, we retrieve all the smart contracts that call to a specific contract. Therefore, we use the Call to filter to specify the “contract address.” 
+
+Run this API to retrieve all contracts that call the NFT token “0x60e..”.
+{
+  EVM {
+    Calls(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+      where: {Call: {To: {is: "0x60e4d786628fea6478f785a6d7e704777c86a7c6"}}}
+    ) {
+      Call {
+        From
+        Gas
+        GasUsed
+        To
+        Value
+      }
+      Transaction {
+        Hash
+      }
+      Arguments {
+        Name
+        Value {
+          ... on EVM_ABI_Integer_Value_Arg {
+            integer
+          }
+          ... on EVM_ABI_String_Value_Arg {
+            string
+          }
+          ... on EVM_ABI_Address_Value_Arg {
+            address
+          }
+          ... on EVM_ABI_BigInt_Value_Arg {
+            bigInteger
+          }
+          ... on EVM_ABI_Bytes_Value_Arg {
+            hex
+          }
+          ... on EVM_ABI_Boolean_Value_Arg {
+            bool
+          }
+        }
+      }
+    }
+  }
+}
+
+In the following example, we retrieve the contract creator of the specific contract. Therefore, we use the Call Create filter and Call Success filter and set them to true, and then the Call To filter is used to specify the contract address. 
+
+Then we mentioned Transaction From to get the creator or deployer of the specified contract.
+
+Run this API to retrieve  that the creator of the pool contract (“0x6C3..”) is “0x41653c7d61609d856f29355e404f310ec4142cfb.”
+
+{
+  eth_creates: EVM(dataset: combined, network: eth) {
+    creates: Calls(
+      where: 
+      {Call: {Create: true, Success: true,
+        To: 
+        {is: "0x6C3e4cb2E96B01F4b866965A91ed4437839A121a"}}}
+      
+    ) {
+      Block {
+        Time
+      }
+      Transaction {
+        Hash
+       Contract_creator: From
+
+      }
+     }
+  }
+}
+
+
+
+{
+  eth_creates: EVM(dataset: combined, network: eth) {
+    creates: Calls(
+      where: {Call: {Create: true, Success: true}, Transaction: {From: {is: "0x41653c7d61609d856f29355e404f310ec4142cfb"}}}
+orderBy: {descending: Block_Time}
+    ) {
+      Block {
+        Time
+      }
+      Call {
+        To
+      }
+      Transaction {
+        Hash
+      }
+    }
+  }
+}
+
+
+
+
+In the following example, we retrieve a specific method call for a contract. Therefore, we use the Call To filter to specify the smart contract and the Call Signature filter to specify the method.  
+
+Run this query to retrieve the startAuction method call for the contact “0x294…”
+{
+  EVM(dataset: combined, network: eth) {
+    Calls(
+      orderBy: {descending: Block_Time}
+      limit: {count: 1}
+      where: {Call: {To: {is: "0x29469395eaf6f95920e59f858042f0e28d98a20b"}, Signature: {Name: {is: "startAuction"}}}}
+    ) {
+      ChainId
+      Block {
+        Time
+      }
+      Call {
+        CallPath
+        CallerIndex
+        Create
+        Delegated
+        Depth
+        Index
+        EnterIndex
+        ExitIndex
+        Success
+        Reverted
+        From
+        GasUsed
+        Gas
+        To
+        Value
+        Signature {
+          Parsed
+          Signature
+          SignatureHash
+          Name
+        }
+      }
+      Returns {
+        Index
+        Name
+        Path {
+          Index
+          Name
+          Type
+        }
+        Type
+        Value {
+          ... on EVM_ABI_Integer_Value_Arg {
+            integer
+          }
+          ... on EVM_ABI_String_Value_Arg {
+            string
+          }
+          ... on EVM_ABI_Address_Value_Arg {
+            address
+          }
+          ... on EVM_ABI_BigInt_Value_Arg {
+            bigInteger
+          }
+          ... on EVM_ABI_Bytes_Value_Arg {
+            hex
+          }
+          ... on EVM_ABI_Boolean_Value_Arg {
+            bool
+          }
+        }
+      }
+      Arguments {
+        Index
+        Name
+        Path {
+          Index
+          Name
+          Type
+        }
+        Type
+        Value {
+          ... on EVM_ABI_Integer_Value_Arg {
+            integer
+          }
+          ... on EVM_ABI_String_Value_Arg {
+            string
+          }
+          ... on EVM_ABI_Address_Value_Arg {
+            address
+          }
+          ... on EVM_ABI_BigInt_Value_Arg {
+            bigInteger
+          }
+          ... on EVM_ABI_Bytes_Value_Arg {
+            hex
+          }
+          ... on EVM_ABI_Boolean_Value_Arg {
+            bool
+          }
+        }
+      }
+      Transaction {
+        Hash
+      }
+     
+    }
+  }
+}
+
+
+
+It is important to note that the Call From filter is also important. If you run this API, you can retrieve the top gas cost call from any address. 
+
+
+Aggregation in Calls cube:
+
+Calls Cube provides extensive aggregation capabilities, grouping data by time, date, sender, recipient, caller, callee, and contract function. 
+
+
+In the following example, we aggregate the data to retrieve the total fees burned, sender fees, gas refund fees, miner rewards, and the average transaction gas price in the Ethereum network between Dec  21, 2023, and Dec 28, 2023. Run this API using this link.
+
+
+
+{
+
+  EVM(network: eth, dataset: combined) {
+    Calls(
+      where: {Block: {Date: {till: "2023-12-28", since: "2023-12-21"}}}
+      orderBy: {descendingByField: "count"}
+    ) {
+      burnt: sum(of: Fee_Burnt)
+      sender_fee: sum(of: Fee_SenderFee)
+      fee_refund: sum(of: Fee_GasRefund)
+      fee_reward: sum(of: Fee_MinerReward)
+      average(of: Transaction_GasPrice)
+      count
+      ChainId
+      Block {
+        Date
+      }
+    }
+  }
+}
+
+
+
+
+Calls cubes metrics
+
+Next, we retrieve the total number of contracts created by any address. Thus, we use a Call create and success filter and set them to true. Additionally,  we use Transaction From filter to specify the contract creator's address. 
+
+Then, we mention the uniq metric that retrieves the number of contracts created by address.
+
+
+Run this API to retrieve  that address. “0x6C9FC…” created 14 contracts till 2024-06-15. 
+
+{
+  EVM(dataset: combined, network: eth) {
+    creates: Calls(
+      where: {Call: {Create: true, Success: true}, Transaction: {From: {is: "0x6C9FC64A53c1b71FB3f9Af64d1ae3A4931A5f4E9"}}, Block: {Date: {till: "2024-06-15"}}}
+    ) {
+      Number_of_contracts: uniq(of: Call_To, method: exact)
+    }
+  }
+}
+
+
+
+
+
+In the following example, using the uniq metric, we retrieve the top contract deployer addresses and the total number of contracts they deployed. Run this API 
+using this link.
+
+
+{
+  EVM(dataset: combined, network: eth) {
+    creates: Calls(
+      where: {Call: {Create: true, Success: true}}
+      orderBy: {descendingByField: "Number_of_contracts"}
+      limit: {count: 10}
+    ) {
+      Number_of_contracts: uniq(of: Call_To method:exact)
+      Transaction {
+        From
+      }
+    }
+  }
+}
+
+
+
+
+Using the count metric, we can retrieve the total number of daily calls made by any address. 
+
+In this example, we retrieve the total number of calls initiated from the address '0x1F98431c8aD98523631AE4a59f267346ea31F984'. Therefore, we specify this address using the Call From filter and then use the count metric to determine the total number of calls made.
+Run this API using this link.
+
+{
+  EVM(dataset: combined, network: eth) {
+    Calls(
+      orderBy: {descendingByField: "Block_Date"}
+      where: {Call: {From: {is: "0x1F98431c8aD98523631AE4a59f267346ea31F984"}}}
+      limit: {count: 10}
+    ) {
+      Block {
+        Date(interval: {count: 1, in: days})
+      }
+      count
+    }
+  }
+}
+
+
+
+
+
